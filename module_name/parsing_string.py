@@ -21,7 +21,7 @@ class ParsingString():
         """Return the partial string."""
         return self.string[self.cursor:]
 
-    def __eq__(self, other: typing.Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare the partial string.
 
         Comparison against another :class:`ParsingString` raises an :exc:`TypeError`,
