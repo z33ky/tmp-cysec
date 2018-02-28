@@ -9,7 +9,7 @@ from .error import (
     InvalidRangeError,
     InvalidStartError,
     JunkedEndError,
-    PaddingError,
+    ZeroPaddingError,
     ParsingError,
 )
 from .parser import (

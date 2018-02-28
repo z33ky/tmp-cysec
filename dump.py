@@ -57,7 +57,7 @@ def main() -> None:
               f"       {' ' * e.view.cursor}^",
               file=sys.stderr)
         sys.exit(1)
-    except cidr_length.PaddingError as e:
+    except cidr_length.ZeroPaddingError as e:
         print(f"{e.kind} must not be 0-padded.\n"
               f"input: {e.view.string}\n"
               f"       {' ' * e.view.cursor}^{'~' * (e.pad_amount - 1)}",

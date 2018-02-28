@@ -11,12 +11,12 @@ from .error import (
     InvalidRangeError,
     InvalidStartError,
     JunkedEndError,
-    PaddingError,
+    ZeroPaddingError,
 )
 
 
 class Parser():
-    """TODO"""
+    """Parser of a cidr-length string."""
     # IP4_CIDR_RE: typing.ClassVar[typing.Pattern] = re.compile(r"/(0|[1-9]\d?)")
     # IP6_CIDR_RE: typing.ClassVar[typing.Pattern] = re.compile(r"/(0|[1-9]\d{0-2})")
 
@@ -117,7 +117,7 @@ class Parser():
             if view[0].isdigit():
                 # decrease back to the "0"
                 view.advance(-1)
-                raise PaddingError(view, kind)
+                raise ZeroPaddingError(view, kind)
             else:
                 raise InvalidDualSeparatorError(view)
         elif view[0].isdigit():
