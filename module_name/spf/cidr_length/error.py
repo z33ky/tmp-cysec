@@ -39,7 +39,7 @@ class InvalidRangeError(ParsingError):
     @property
     def token_range(self) -> typing.Tuple[int, int]:
         value_len = len(str(self.value))
-        tok_to = self.view.offset
+        tok_to = self.view.cursor
         tok_from = tok_to - value_len
         return tok_from, tok_to
 

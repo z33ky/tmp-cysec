@@ -21,19 +21,19 @@ def main() -> None:
     except cidr_length.JunkedEndError as e:
         print(f"{e.kind} has junk at end.\n"
               f"input: {e.view.string}\n"
-              f"       {' ' * e.view.offset}^{'~' * (len(e.view) - 1)}",
+              f"       {' ' * e.view.cursor}^{'~' * (len(e.view) - 1)}",
               file=sys.stderr)
         sys.exit(1)
     except cidr_length.EmptyError as e:
         print(f"{e.kind} must not be empty.\n"
               f"input: {e.view.string}\n"
-              f"       {' ' * e.view.offset}^",
+              f"       {' ' * e.view.cursor}^",
               file=sys.stderr)
         sys.exit(1)
     except cidr_length.InvalidStartError as e:
         print(f"{e.kind} must start with \"{e.start}\".\n"
               f"input: {e.view.string}\n"
-              f"       {' ' * e.view.offset}^",
+              f"       {' ' * e.view.cursor}^",
               file=sys.stderr)
         sys.exit(1)
     except cidr_length.InvalidRangeError as e:
@@ -48,19 +48,19 @@ def main() -> None:
         print(f"Expected dual-cidr-length separator \"{e.separator}\" or NUL, "
               f"found \"{e.invalid_char}\".\n"
               f"input: {e.view.string}\n"
-              f"       {' ' * e.view.offset}^",
+              f"       {' ' * e.view.cursor}^",
               file=sys.stderr)
         sys.exit(1)
     except cidr_length.InvalidCharacterError as e:
         print(f"Invalid character \"{e.invalid_char}\" in {e.kind}.\n"
               f"input: {e.view.string}\n"
-              f"       {' ' * e.view.offset}^",
+              f"       {' ' * e.view.cursor}^",
               file=sys.stderr)
         sys.exit(1)
     except cidr_length.PaddingError as e:
         print(f"{e.kind} must not be 0-padded.\n"
               f"input: {e.view.string}\n"
-              f"       {' ' * e.view.offset}^{'~' * (e.pad_amount - 1)}",
+              f"       {' ' * e.view.cursor}^{'~' * (e.pad_amount - 1)}",
               file=sys.stderr)
         sys.exit(1)
 

@@ -56,7 +56,7 @@ class Parser():
                     return ip4length, None
                 if self.ip6:
                     if view[0] == "/":
-                        view.skip(1)
+                        view.advance(1)
                     else:
                         raise InvalidDualSeparatorError(view)
             if view and not self.ip6:
@@ -98,12 +98,12 @@ class Parser():
             raise EmptyError(view, kind)
         if view[0] != "/":
             raise InvalidStartError(view, kind)
-        view.skip(1)
+        view.advance(1)
         if not view:
             raise EmptyError(view, kind)
 
         if view[0] == "0":
-            view.skip(1)
+            view.advance(1)
             # we now know the specific kind
             # FIXME: assuming tok_continue only on ip4-cidr-length
             if tok_continue:
@@ -115,8 +115,8 @@ class Parser():
                 return view, 0
 
             if view[0].isdigit():
-                # unskip the "0"
-                view.skip(-1)
+                # decrease back to the "0"
+                view.advance(-1)
                 raise PaddingError(view, kind)
             else:
                 raise InvalidDualSeparatorError(view)
@@ -126,7 +126,7 @@ class Parser():
             first_non_digit_idx = next((i for i, c in enumerate(view) if not c.isdigit()),
                                        len(view))
             length = int(view[:first_non_digit_idx])
-            view.skip(first_non_digit_idx)
+            view.advance(first_non_digit_idx)
             return view, length
         elif view[0] == "/" and tok_continue:
             return view, None
