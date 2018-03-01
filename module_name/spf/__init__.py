@@ -3,3 +3,5 @@
 """SPF parser."""
 
 from . import cidr_length
+from .spf import SPF
+from .parser import Parser
