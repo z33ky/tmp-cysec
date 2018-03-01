@@ -127,7 +127,7 @@ confidence=
 #        dict-items-not-iterating,
 #        dict-keys-not-iterating,
 #        dict-values-not-iterating
-disable=fixme,locally-disabled
+disable=fixme,locally-disabled,consider-iterating-dictionary
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
