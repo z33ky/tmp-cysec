@@ -21,40 +21,40 @@ def main() -> None:
         if isinstance(e, cidr_length.JunkedEndError):
             print(f"{e.kind} has junk at end.\n"
                   f"input: {e.view.string}\n"
-                  f"       {' ' * e.view.cursor}^{'~' * (len(e.view) - 1)}",
+                  f"       {'':>{e.view.cursor}}{'^':~<{len(e.view)}}",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.EmptyError):
             print(f"{e.kind} must not be empty.\n"
                   f"input: {e.view.string}\n"
-                  f"       {' ' * e.view.cursor}^",
+                  f"       {'':>{e.view.cursor}}^",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.InvalidStartError):
             print(f"{e.kind} must start with \"{e.start}\".\n"
                   f"input: {e.view.string}\n"
-                  f"       {' ' * e.view.cursor}^",
+                  f"       {'':>{e.view.cursor}}^",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.InvalidRangeError):
             str_from, str_to = e.token_range
             value_len = str_to - str_from
             print(f"{e.kind} must be in {e.valid_range_str}, but is \"{e.value}\".\n"
                   f"input: {e.view.string}\n"
-                  f"       {' ' * str_from}^{'~' * (value_len - 1)}",
+                  f"       {'':>{str_from}}^{'~' * (value_len - 1)}",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.InvalidDualSeparatorError):
             print(f"Expected dual-cidr-length separator \"{e.separator}\" or NUL, "
                   f"found \"{e.invalid_char}\".\n"
                   f"input: {e.view.string}\n"
-                  f"       {' ' * e.view.cursor}^",
+                  f"       {'':>{e.view.cursor}}^",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.InvalidCharacterError):
             print(f"Invalid character \"{e.invalid_char}\" in {e.kind}.\n"
                   f"input: {e.view.string}\n"
-                  f"       {' ' * e.view.cursor}^",
+                  f"       {'':>{e.view.cursor}}^",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.ZeroPaddingError):
             print(f"{e.kind} must not be 0-padded.\n"
                   f"input: {e.view.string}\n"
-                  f"       {' ' * e.view.cursor}^{'~' * (e.pad_amount - 1)}",
+                  f"       {'':>{e.view.cursor}}{'^':~<{e.pad_amount}}",
                   file=sys.stderr)
         else:
             raise e
