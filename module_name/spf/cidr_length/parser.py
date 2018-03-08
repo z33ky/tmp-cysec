@@ -112,29 +112,39 @@ class Parser():
             errors.append(EmptyError(view, parsing_kind))
             return view, None
 
-        if view[0].isdigit():
-            # find the first non-digit-character
-            first_non_digit_idx = next((i for i, c in enumerate(view) if not c.isdigit()),
-                                       len(view))
-            length = int(view[:first_non_digit_idx])
-
-            if view[0] == "0":
-                if length == 0:
-                    view.advance(1)
-                    return view, 0
-
-                if view[1].isdigit():
-                    errors.append(ZeroPaddingError(view, specific_kind))
-            view.advance(first_non_digit_idx)
-            return view, length
-        # an empty string is allowed when when the caller continues parsing
-        elif view[0] == "/" and parsing_kind == specific_kind:
+        sep = str(view).find("/")
+        # an empty string is allowed when when the caller looks for different kinds,
+        # i.e. parsing_kind is "dual" and specific_kind is "ip4"
+        if sep == 0 and parsing_kind == specific_kind:
+            view.advance(1)
             return view, None
-        else:
+
+        # find the first digit-character
+        first_digit_idx = next((i for i, c in enumerate(view) if c.isdigit()), -1)
+        if first_digit_idx != 0:
             errors.append(InvalidCharacterError(view, parsing_kind))
-            # FIXME: skip & retry
-            #        pull this in front of the if-elif chain?
-            return view, None
+            if first_digit_idx < 0:
+                # no digits at all -> return None
+                advance = sep
+                if advance < 0:
+                    # only junk, skip everything
+                    advance = len(view)
+                view.advance(advance)
+                return view, None
+            view.advance(first_digit_idx)
+
+        assert view[0].isdigit()
+
+        # find the first non-digit-character
+        first_non_digit_idx = next((i for i, c in enumerate(view) if not c.isdigit()),
+                                   len(view))
+        number = int(view[:first_non_digit_idx])
+
+        if view[0] == "0" and first_non_digit_idx > 1:
+            errors.append(ZeroPaddingError(view, specific_kind))
+
+        view.advance(first_non_digit_idx)
+        return view, number
 
 
 # pylint: disable=bad-whitespace
