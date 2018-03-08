@@ -106,6 +106,9 @@ class Parser():
             if start < 0:
                 # if we didn't find a separator, look for a number
                 start = next((i for i, c in enumerate(view) if c.isdigit()), len(view)) -1
+            elif view[0].isdigit():
+                # do not skip anything then
+                start = -1
             errors.append(InvalidStartError(view, parsing_kind))
         view.advance(start + 1)
         if not view:
