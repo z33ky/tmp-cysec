@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """cidr-length parsing errors."""
 
+import copy
 import typing
 from module_name.spf.error import ParsingError as SPFParsingError
 from module_name.parsing_string import ParsingString
@@ -15,7 +16,7 @@ class ParsingError(SPFParsingError):
         `kind` specifies the type of cidr-length string (e.g. "ip4-cidr-length").
         """
         super().__init__()
-        self.view = view
+        self.view = copy.copy(view)
         self.kind = kind
 
 

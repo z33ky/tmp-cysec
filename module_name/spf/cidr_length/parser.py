@@ -3,7 +3,9 @@
 
 # import re
 import typing
+from module_name.spf.error import ParsingError
 from module_name.parsing_string import ParsingString
+from .cidr_lengths import CidrLengths
 from .error import (
     EmptyError,
     InvalidCharacterError,
@@ -23,66 +25,68 @@ class Parser():
     def __init__(self, ip4: bool, ip6: bool) -> None:
         """Create a :class:`CidrLength`.
 
-        `ip4` and `ip6` specify which kinds of CIDR-lengths this :class:`CidrLength` parses.
+        `ip4` and `ip6` specify which kinds of CIDR-lengths this :class:`Parser` parses.
         """
+        assert ip4 or ip6
         self.ip4 = ip4
         self.ip6 = ip6
-        # assert self.ip4 or self.ip6
 
-    def parse(self, length: str) -> typing.Tuple[typing.Optional[int], typing.Optional[int]]:
+    def parse(self, length: str) -> CidrLengths:
         """Parse a cidr-length.
 
         `length` is the cidr-length string to parse.
 
-        Returns a tuple (
-
-            * IPv4 CIDR length
-            * IPv6 CIDR length
-
-        ).
-
-        Raises a :exc:`CidrLengthParsingError` when parsing fails.
+        Returns a :class:`CidrLengths`.
         """
         view = ParsingString(length)
+        cidr = CidrLengths(length)
 
-        ip4length = None
         if self.ip4:
             kind = "ip4-cidr-length" if not self.ip6 else "dual-cidr-length"
-            view, ip4length = self._parse(kind, view, self.ip6)
-            if ip4length is not None:
-                if not 0 <= ip4length <= 32:
-                    raise InvalidRangeError(view, "ip4-cidr-length", (0, 32), ip4length)
+            view, cidr.ip4 = self._parse(cidr.errors, kind, "ip4-cidr-length", view)
+            if cidr.ip4 is not None:
+                clamped = max(0, min(cidr.ip4, 32))
+                if clamped != cidr.ip4:
+                    cidr.errors.append(InvalidRangeError(view, "ip4-cidr-length", (0, 32),
+                                                         cidr.ip4))
+                    cidr.ip4 = clamped
                 if not view:
-                    return ip4length, None
+                    return cidr
                 if self.ip6:
-                    if view[0] == "/":
-                        view.advance(1)
-                    else:
-                        raise InvalidDualSeparatorError(view)
+                    sep = str(view).find("/")
+                    if sep > 0:
+                        cidr.errors.append(InvalidDualSeparatorError(view))
+                    # TODO: should we handle this here or let the following code take care of it?
+                    elif False or sep < 0:
+                        cidr.errors.append(JunkedEndError(view, "ip4-cidr-length"))
+                        return cidr
+                    view.advance(sep + 1)
             if view and not self.ip6:
-                raise JunkedEndError(view, "ip4-cidr-length")
+                cidr.errors.append(JunkedEndError(view, "ip4-cidr-length"))
+                return cidr
 
-        ip6length = None
         if self.ip6:
-            view, ip6length = self._parse("ip6-cidr-length", view, False)
-            assert ip6length
-            if not 0 <= ip6length <= 128:
-                raise InvalidRangeError(view, "ip6-cidr-length", (0, 128), ip6length)
-            if view:
-                raise JunkedEndError(view, "ip6-cidr-length")
+            view, cidr.ip6 = self._parse(cidr.errors, "ip6-cidr-length", "ip6-cidr-length", view)
+            if cidr.ip6 is not None:
+                clamped = max(0, min(cidr.ip6, 128))
+                if clamped != cidr.ip6:
+                    cidr.errors.append(InvalidRangeError(view, "ip6-cidr-length", (0, 128),
+                                                         cidr.ip6))
+                    cidr.ip6 = clamped
+                if view:
+                    cidr.errors.append(JunkedEndError(view, "ip6-cidr-length"))
 
-        # assert ip4length or ip6length
-        return ip4length, ip6length
+        return cidr
 
     @staticmethod
-    def _parse(kind: str, view: ParsingString, tok_continue: bool) \
-            -> typing.Tuple[ParsingString, typing.Optional[int]]:
+    def _parse(errors: typing.List[ParsingError], parsing_kind: str, specific_kind: str,
+               view: ParsingString) -> typing.Tuple[ParsingString, typing.Optional[int]]:
         """Parse a domain-spec.
 
-        `kind` specifies which CIDR type we are attempting to parse.
+        `errors` is a `list` to which errors will be appended.
+        `parsing_kind` specifies which CIDR type the parser is for.
+        `specific_kind` specifies which CIDR type we are attempting to parse.
         `view` is the string to parse.
-        `tok_continue` specifies whether an empty string is allowed when the continuation-token "/"
-                       is encountered.
 
         Returns a tuple (
 
@@ -95,43 +99,42 @@ class Parser():
         """
         # attempt to strip the leading "/"
         if not view:
-            raise EmptyError(view, kind)
-        if view[0] != "/":
-            raise InvalidStartError(view, kind)
-        view.advance(1)
+            errors.append(EmptyError(view, parsing_kind))
+            return view, None
+        start = str(view).find("/")
+        if start != 0:
+            if start < 0:
+                # if we didn't find a separator, look for a number
+                start = next((i for i, c in enumerate(view) if c.isdigit()), len(view)) -1
+            errors.append(InvalidStartError(view, parsing_kind))
+        view.advance(start + 1)
         if not view:
-            raise EmptyError(view, kind)
+            errors.append(EmptyError(view, parsing_kind))
+            return view, None
 
-        if view[0] == "0":
-            view.advance(1)
-            # we now know the specific kind
-            # FIXME: assuming tok_continue only on ip4-cidr-length
-            if tok_continue:
-                kind = "ip4-cidr-length"
-            else:
-                kind = "ip6-cidr-length"
-
-            if not view or view[0].isspace():
-                return view, 0
-
-            if view[0].isdigit():
-                # decrease back to the "0"
-                view.advance(-1)
-                raise ZeroPaddingError(view, kind)
-            else:
-                raise InvalidDualSeparatorError(view)
-        elif view[0].isdigit():
-            # non-0 number
+        if view[0].isdigit():
             # find the first non-digit-character
             first_non_digit_idx = next((i for i, c in enumerate(view) if not c.isdigit()),
                                        len(view))
             length = int(view[:first_non_digit_idx])
+
+            if view[0] == "0":
+                if length == 0:
+                    view.advance(1)
+                    return view, 0
+
+                if view[1].isdigit():
+                    errors.append(ZeroPaddingError(view, specific_kind))
             view.advance(first_non_digit_idx)
             return view, length
-        elif view[0] == "/" and tok_continue:
+        # an empty string is allowed when when the caller continues parsing
+        elif view[0] == "/" and parsing_kind == specific_kind:
             return view, None
         else:
-            raise InvalidCharacterError(view, kind)
+            errors.append(InvalidCharacterError(view, parsing_kind))
+            # FIXME: skip & retry
+            #        pull this in front of the if-elif chain?
+            return view, None
 
 
 # pylint: disable=bad-whitespace

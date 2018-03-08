@@ -10,59 +10,55 @@ from module_name.spf import cidr_length
 # test...
 
 def main() -> None:
-    try:
-        cidr_type = input("CIDR type? (ip4, ip6, dual) ")
-        cidr = {
-            'ip4' : cidr_length.IP4CidrLengthParser,  # noqa: E203
-            'ip6' : cidr_length.IP6CidrLengthParser,  # noqa: E203
-            'dual': cidr_length.DualCidrLengthParser,
-        }[cidr_type]
-        cidr.parse(input("cidr-length string: "))
-    except cidr_length.JunkedEndError as e:
-        print(f"{e.kind} has junk at end.\n"
-              f"input: {e.view.string}\n"
-              f"       {' ' * e.view.cursor}^{'~' * (len(e.view) - 1)}",
-              file=sys.stderr)
-        sys.exit(1)
-    except cidr_length.EmptyError as e:
-        print(f"{e.kind} must not be empty.\n"
-              f"input: {e.view.string}\n"
-              f"       {' ' * e.view.cursor}^",
-              file=sys.stderr)
-        sys.exit(1)
-    except cidr_length.InvalidStartError as e:
-        print(f"{e.kind} must start with \"{e.start}\".\n"
-              f"input: {e.view.string}\n"
-              f"       {' ' * e.view.cursor}^",
-              file=sys.stderr)
-        sys.exit(1)
-    except cidr_length.InvalidRangeError as e:
-        str_from, str_to = e.token_range
-        value_len = str_to - str_from
-        print(f"{e.kind} must be in {e.valid_range_str}, but is \"{e.value}\".\n"
-              f"input: {e.view.string}\n"
-              f"       {' ' * str_from}^{'~' * (value_len - 1)}",
-              file=sys.stderr)
-        sys.exit(1)
-    except cidr_length.InvalidDualSeparatorError as e:
-        print(f"Expected dual-cidr-length separator \"{e.separator}\" or NUL, "
-              f"found \"{e.invalid_char}\".\n"
-              f"input: {e.view.string}\n"
-              f"       {' ' * e.view.cursor}^",
-              file=sys.stderr)
-        sys.exit(1)
-    except cidr_length.InvalidCharacterError as e:
-        print(f"Invalid character \"{e.invalid_char}\" in {e.kind}.\n"
-              f"input: {e.view.string}\n"
-              f"       {' ' * e.view.cursor}^",
-              file=sys.stderr)
-        sys.exit(1)
-    except cidr_length.ZeroPaddingError as e:
-        print(f"{e.kind} must not be 0-padded.\n"
-              f"input: {e.view.string}\n"
-              f"       {' ' * e.view.cursor}^{'~' * (e.pad_amount - 1)}",
-              file=sys.stderr)
-        sys.exit(1)
+    cidr_type = input("CIDR type? (ip4, ip6, dual) ")
+    cidr = {
+        'ip4' : cidr_length.IP4CidrLengthParser,  # noqa: E203
+        'ip6' : cidr_length.IP6CidrLengthParser,  # noqa: E203
+        'dual': cidr_length.DualCidrLengthParser,
+    }[cidr_type]
+    cidrs = cidr.parse(input("cidr-length string: "))
+    for e in cidrs.errors:
+        if isinstance(e, cidr_length.JunkedEndError):
+            print(f"{e.kind} has junk at end.\n"
+                  f"input: {e.view.string}\n"
+                  f"       {' ' * e.view.cursor}^{'~' * (len(e.view) - 1)}",
+                  file=sys.stderr)
+        elif isinstance(e, cidr_length.EmptyError):
+            print(f"{e.kind} must not be empty.\n"
+                  f"input: {e.view.string}\n"
+                  f"       {' ' * e.view.cursor}^",
+                  file=sys.stderr)
+        elif isinstance(e, cidr_length.InvalidStartError):
+            print(f"{e.kind} must start with \"{e.start}\".\n"
+                  f"input: {e.view.string}\n"
+                  f"       {' ' * e.view.cursor}^",
+                  file=sys.stderr)
+        elif isinstance(e, cidr_length.InvalidRangeError):
+            str_from, str_to = e.token_range
+            value_len = str_to - str_from
+            print(f"{e.kind} must be in {e.valid_range_str}, but is \"{e.value}\".\n"
+                  f"input: {e.view.string}\n"
+                  f"       {' ' * str_from}^{'~' * (value_len - 1)}",
+                  file=sys.stderr)
+        elif isinstance(e, cidr_length.InvalidDualSeparatorError):
+            print(f"Expected dual-cidr-length separator \"{e.separator}\" or NUL, "
+                  f"found \"{e.invalid_char}\".\n"
+                  f"input: {e.view.string}\n"
+                  f"       {' ' * e.view.cursor}^",
+                  file=sys.stderr)
+        elif isinstance(e, cidr_length.InvalidCharacterError):
+            print(f"Invalid character \"{e.invalid_char}\" in {e.kind}.\n"
+                  f"input: {e.view.string}\n"
+                  f"       {' ' * e.view.cursor}^",
+                  file=sys.stderr)
+        elif isinstance(e, cidr_length.ZeroPaddingError):
+            print(f"{e.kind} must not be 0-padded.\n"
+                  f"input: {e.view.string}\n"
+                  f"       {' ' * e.view.cursor}^{'~' * (e.pad_amount - 1)}",
+                  file=sys.stderr)
+        else:
+            raise e
+    print(cidrs.ip4, cidrs.ip6)
 
 
 if __name__ == '__main__':

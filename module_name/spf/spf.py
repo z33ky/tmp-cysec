@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import typing
-from .directive import Directive
-from .modifier import Modifier
+from .term import Term
 
 
 class SPF:
-    directives: typing.List[Directive] = []
-    modifiers: typing.List[Modifier] = []
+    terms: typing.List[Term] = []
+
+    def __str__(self) -> str:
+        return "".join(map(str, self.terms))

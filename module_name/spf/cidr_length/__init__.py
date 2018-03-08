@@ -2,6 +2,7 @@
 # flake8: noqa: F401
 """cidr-length parsing."""
 
+from .cidr_lengths import CidrLengths
 from .error import (
     EmptyError,
     InvalidCharacterError,
