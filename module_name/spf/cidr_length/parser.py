@@ -45,11 +45,11 @@ class Parser():
             kind = "ip4-cidr-length" if not self.ip6 else "dual-cidr-length"
             view, cidr.ip4 = self._parse(cidr.errors, kind, "ip4-cidr-length", view)
             if cidr.ip4 is not None:
-                clamped = max(0, min(cidr.ip4, 32))
-                if clamped != cidr.ip4:
+                assert cidr.ip4 >= 0
+                if cidr.ip4 > 32:
                     cidr.errors.append(InvalidRangeError(view, "ip4-cidr-length", (0, 32),
                                                          cidr.ip4))
-                    cidr.ip4 = clamped
+                    cidr.ip4 = 32
                 if not view:
                     return cidr
                 if self.ip6:
@@ -68,11 +68,11 @@ class Parser():
         if self.ip6:
             view, cidr.ip6 = self._parse(cidr.errors, "ip6-cidr-length", "ip6-cidr-length", view)
             if cidr.ip6 is not None:
-                clamped = max(0, min(cidr.ip6, 128))
-                if clamped != cidr.ip6:
+                assert cidr.ip6 >= 0
+                if cidr.ip6 > 128:
                     cidr.errors.append(InvalidRangeError(view, "ip6-cidr-length", (0, 128),
                                                          cidr.ip6))
-                    cidr.ip6 = clamped
+                    cidr.ip6 = 128
                 if view:
                     cidr.errors.append(JunkedEndError(view, "ip6-cidr-length"))
 
