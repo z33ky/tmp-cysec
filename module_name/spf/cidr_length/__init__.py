@@ -5,7 +5,7 @@
 from .cidr_lengths import CidrLengths
 from .error import (
     EmptyError,
-    InvalidCharacterError,
+    InvalidCharactersError,
     InvalidDualSeparatorError,
     InvalidRangeError,
     InvalidStartError,

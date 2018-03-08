@@ -8,7 +8,7 @@ from module_name.parsing_string import ParsingString
 from .cidr_lengths import CidrLengths
 from .error import (
     EmptyError,
-    InvalidCharacterError,
+    InvalidCharactersError,
     InvalidDualSeparatorError,
     InvalidRangeError,
     InvalidStartError,
@@ -104,11 +104,13 @@ class Parser():
         if start != 0:
             if start < 0:
                 # if we didn't find a separator, look for a number
-                start = next((i for i, c in enumerate(view) if c.isdigit()), len(view)) -1
+                start = next((i for i, c in enumerate(view) if c.isdigit()), len(view))
             elif view[0].isdigit():
                 # do not skip anything then
-                start = -1
-            errors.append(InvalidStartError(view, parsing_kind))
+                start = 0
+            # we need at least 1 invalid character...
+            errors.append(InvalidStartError(view, parsing_kind, start or 1))
+            start -= 1
         view.advance(start + 1)
         if not view:
             errors.append(EmptyError(view, parsing_kind))
@@ -124,15 +126,16 @@ class Parser():
         # find the first digit-character
         first_digit_idx = next((i for i, c in enumerate(view) if c.isdigit()), -1)
         if first_digit_idx != 0:
-            errors.append(InvalidCharacterError(view, parsing_kind))
             if first_digit_idx < 0:
                 # no digits at all -> return None
                 advance = sep
                 if advance < 0:
                     # only junk, skip everything
                     advance = len(view)
+                errors.append(InvalidCharactersError(view, parsing_kind, advance))
                 view.advance(advance)
                 return view, None
+            errors.append(InvalidCharactersError(view, parsing_kind, first_digit_idx - 1))
             view.advance(first_digit_idx)
 
         assert view[0].isdigit()
@@ -143,7 +146,7 @@ class Parser():
         number = int(view[:first_non_digit_idx])
 
         if view[0] == "0" and first_non_digit_idx > 1:
-            errors.append(ZeroPaddingError(view, specific_kind))
+            errors.append(ZeroPaddingError(view, specific_kind, first_non_digit_idx - 1))
 
         view.advance(first_non_digit_idx)
         return view, number

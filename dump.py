@@ -31,7 +31,7 @@ def main() -> None:
         elif isinstance(e, cidr_length.InvalidStartError):
             print(f"{e.kind} must start with \"{e.start}\".\n"
                   f"input: {e.view.string}\n"
-                  f"       {'':>{e.view.cursor}}^",
+                  f"       {'':>{e.view.cursor}}{'^':~<{e.length}}",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.InvalidRangeError):
             str_from, str_to = e.token_range
@@ -42,19 +42,19 @@ def main() -> None:
                   file=sys.stderr)
         elif isinstance(e, cidr_length.InvalidDualSeparatorError):
             print(f"Expected dual-cidr-length separator \"{e.separator}\" or NUL, "
-                  f"found \"{e.invalid_char}\".\n"
-                  f"input: {e.view.string}\n"
-                  f"       {'':>{e.view.cursor}}^",
-                  file=sys.stderr)
-        elif isinstance(e, cidr_length.InvalidCharacterError):
-            print(f"Invalid character \"{e.invalid_char}\" in {e.kind}.\n"
+                  f"found \"{e.invalid_chars}\".\n"
                   f"input: {e.view.string}\n"
                   f"       {'':>{e.view.cursor}}^",
                   file=sys.stderr)
         elif isinstance(e, cidr_length.ZeroPaddingError):
             print(f"{e.kind} must not be 0-padded.\n"
                   f"input: {e.view.string}\n"
-                  f"       {'':>{e.view.cursor}}{'^':~<{e.pad_amount}}",
+                  f"       {'':>{e.view.cursor}}{'^':~<{e.length}}",
+                  file=sys.stderr)
+        elif isinstance(e, cidr_length.InvalidCharactersError):
+            print(f"Invalid character \"{e.invalid_chars}\" in {e.kind}.\n"
+                  f"input: {e.view.string}\n"
+                  f"       {'':>{e.view.cursor}}{'^':~<{e.length}}",
                   file=sys.stderr)
         else:
             raise e

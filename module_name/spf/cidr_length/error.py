@@ -59,20 +59,30 @@ class InvalidRangeError(ParsingError):
         return tok_from, tok_to
 
 
-class InvalidCharacterError(ParsingError):
+class InvalidCharactersError(ParsingError):
     """Invalid character in cidr-length."""
+    def __init__(self, view: ParsingString, kind: str, length: int) -> None:
+        """Create a :class:`InvalidCharactersError`.
+
+        `view` and `kind` are the same as for :meth:`ParsingError.__init__`.
+        `length` specifies the number of invalid characters.
+        """
+        assert length > 0
+        super().__init__(view, kind)
+        self.length = length
+
     @property
-    def invalid_char(self) -> str:
+    def invalid_chars(self) -> str:
         """The invalid character that induced the error."""
-        return self.view[0]
+        return self.view[0:self.length]
 
 
-class InvalidStartError(InvalidCharacterError):
+class InvalidStartError(InvalidCharactersError):
     """Junk at end of cidr-length."""
     start: typing.ClassVar[str] = "/"
 
 
-class InvalidDualSeparatorError(InvalidCharacterError):
+class InvalidDualSeparatorError(InvalidCharactersError):
     """Invalid character in dual-cidr-length after ip4-cidr-length."""
     separator: typing.ClassVar[str] = "/"
 
@@ -81,15 +91,9 @@ class InvalidDualSeparatorError(InvalidCharacterError):
 
         `view` is the same as for :meth:`ParsingError.__init__`.
         """
-        super().__init__(view, "dual-cidr-length")
+        super().__init__(view, "dual-cidr-length", 1)
 
 
-class ZeroPaddingError(ParsingError):
+class ZeroPaddingError(InvalidCharactersError):
     """Zero-padding is not allowed in cidr-lenghts."""
-    @property
-    def pad_amount(self) -> int:
-        """The amount of 0-padding observed."""
-        # find first non-0 character, or last if all 0's
-        num_pad = next((i for i, c in enumerate(self.view) if c != "0"), len(self.view) - 1)
-        assert num_pad != 0
-        return num_pad
+    pass
