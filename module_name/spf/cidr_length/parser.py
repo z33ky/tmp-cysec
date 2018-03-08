@@ -56,8 +56,7 @@ class Parser():
                     sep = str(view).find("/")
                     if sep > 0:
                         cidr.errors.append(InvalidDualSeparatorError(view))
-                    # TODO: should we handle this here or let the following code take care of it?
-                    elif False or sep < 0:
+                    elif sep < 0:
                         cidr.errors.append(JunkedEndError(view, "ip4-cidr-length"))
                         return cidr
                     view.advance(sep + 1)
