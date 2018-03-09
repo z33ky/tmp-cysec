@@ -2,7 +2,14 @@
 """SPF parsing errors."""
 
 
-from module_name.parsing_string import ParsingString
+import typing
+if typing.TYPE_CHECKING:
+    # mypy has no issues with cyclic imports
+    # pylint: disable=cyclic-import,unused-import
+    from .directive import Directive  # noqa: F401
+    from .modifier import Modifier  # noqa: F401
+    from .term import Term  # noqa: F401
+    from .version import Version  # noqa: F401
 
 
 class ParsingError(RuntimeError):
@@ -10,40 +17,31 @@ class ParsingError(RuntimeError):
     pass
 
 
-class SPFVersionError(ParsingError):
-    def __init__(self, view: ParsingString) -> None:
+class TermError(ParsingError):
+    """Errors while parsing SPF terms."""
+    def __init__(self, term: 'Term') -> None:
         super().__init__()
-        self.view = view
-
-
-class UnknownTermError(ParsingError):
-    def __init__(self, view: ParsingString, term: str) -> None:
-        super().__init__()
-        self.view = view
         self.term = term
 
 
-class UnknownDirectiveError(ParsingError):
-    def __init__(self, view: ParsingString, name: str, arg: str) -> None:
-        super().__init__()
-        self.view = view
-        self.name = name
-        self.arg = arg
-
-    @property
-    def term(self) -> str:
-        if self.arg is None:
-            return self.name
-        return f"{self.name}:{self.arg}"
+class SPFVersionError(TermError):
+    """Invalid SPF version."""
+    def __init__(self, version: 'Version') -> None:
+        super().__init__(version)
 
 
-class UnknownModifierError(ParsingError):
-    def __init__(self, view: ParsingString, name: str, arg: str) -> None:
-        super().__init__()
-        self.view = view
-        self.name = name
-        self.arg = arg
+class UnknownTermError(TermError):
+    """An unknown term was encountered."""
+    pass
 
-    @property
-    def term(self) -> str:
-        return f"{self.name}={self.arg}"
+
+class UnknownDirectiveError(UnknownTermError):
+    """An unknown directive was encountered."""
+    def __init__(self, directive: 'Directive') -> None:
+        super().__init__(directive)
+
+
+class UnknownModifierError(UnknownTermError):
+    """An unknown modifier was encountered."""
+    def __init__(self, modifier: 'Modifier') -> None:
+        super().__init__(modifier)

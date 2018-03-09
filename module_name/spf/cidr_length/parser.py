@@ -43,37 +43,37 @@ class Parser():
 
         if self.ip4:
             kind = "ip4-cidr-length" if not self.ip6 else "dual-cidr-length"
-            view, cidr.ip4 = self._parse(cidr.errors, kind, "ip4-cidr-length", view)
+            view, cidr.ip4 = self._parse(cidr._errors, kind, "ip4-cidr-length", view)
             if cidr.ip4 is not None:
                 assert cidr.ip4 >= 0
                 if cidr.ip4 > 32:
-                    cidr.errors.append(InvalidRangeError(view, "ip4-cidr-length", (0, 32),
-                                                         cidr.ip4))
+                    cidr._errors.append(InvalidRangeError(view, "ip4-cidr-length", (0, 32),
+                                                          cidr.ip4))
                     cidr.ip4 = 32
                 if not view:
                     return cidr
                 if self.ip6:
                     sep = str(view).find("/")
                     if sep > 0:
-                        cidr.errors.append(InvalidDualSeparatorError(view))
+                        cidr._errors.append(InvalidDualSeparatorError(view))
                     elif sep < 0:
-                        cidr.errors.append(JunkedEndError(view, "ip4-cidr-length"))
+                        cidr._errors.append(JunkedEndError(view, "ip4-cidr-length"))
                         return cidr
                     view.advance(sep + 1)
             if view and not self.ip6:
-                cidr.errors.append(JunkedEndError(view, "ip4-cidr-length"))
+                cidr._errors.append(JunkedEndError(view, "ip4-cidr-length"))
                 return cidr
 
         if self.ip6:
-            view, cidr.ip6 = self._parse(cidr.errors, "ip6-cidr-length", "ip6-cidr-length", view)
+            view, cidr.ip6 = self._parse(cidr._errors, "ip6-cidr-length", "ip6-cidr-length", view)
             if cidr.ip6 is not None:
                 assert cidr.ip6 >= 0
                 if cidr.ip6 > 128:
-                    cidr.errors.append(InvalidRangeError(view, "ip6-cidr-length", (0, 128),
-                                                         cidr.ip6))
+                    cidr._errors.append(InvalidRangeError(view, "ip6-cidr-length", (0, 128),
+                                                          cidr.ip6))
                     cidr.ip6 = 128
                 if view:
-                    cidr.errors.append(JunkedEndError(view, "ip6-cidr-length"))
+                    cidr._errors.append(JunkedEndError(view, "ip6-cidr-length"))
 
         return cidr
 
