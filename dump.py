@@ -4,12 +4,13 @@
 import enum
 import sys
 import typing
+from module_name import spf
 from module_name.spf import cidr_length
 
 
 # test...
 
-def main() -> None:
+def cidr_parse() -> None:
     cidr_type = input("CIDR type? (ip4, ip6, dual) ")
     cidr = {
         'ip4' : cidr_length.IP4CidrLengthParser,  # noqa: E203
@@ -59,6 +60,28 @@ def main() -> None:
         else:
             raise e
     print(cidrs.ip4, cidrs.ip6)
+
+
+def spf_parse() -> None:
+    policy = spf.Parser.parse(input("SPF string: "))
+    print()
+    for e in policy.errors:
+        if isinstance(e, spf.error.TermError):
+            print(f"{e.__class__.__name__:<21} for \"{e.term.string}\"")
+        else:
+            raise e
+    print()
+    for t in policy.terms:
+        print(f"{t.__class__.__name__:<12} for \"{t.string}\"")
+
+
+def main() -> None:
+    parser = input("Parser? (cidr, spf) ")
+    function = {
+        'cidr': cidr_parse,
+        'spf': spf_parse,
+    }[parser]
+    function()
 
 
 if __name__ == '__main__':
