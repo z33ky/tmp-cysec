@@ -69,10 +69,16 @@ def spf_parse() -> None:
         if isinstance(e, spf.error.TermError):
             print(f"{e.__class__.__name__:<21} for \"{e.term.string}\"")
         else:
-            raise e
+            # FIXME: raise e
+            print(e.__class__.__name__)
     print()
     for t in policy.terms:
-        print(f"{t.__class__.__name__:<12} for \"{t.string}\"")
+        if isinstance(t, spf.Directive):
+            print(f"{t.name} ({t.arg and t.arg.string}) for \"{t.string}\"")
+        elif isinstance(t, spf.Modifier):
+            print(f"{t.name} ({t.arg}) for \"{t.string}\"")
+        else:
+            print(f"{t.__class__.__name__} for \"{t.string}\"")
 
 
 def main() -> None:
