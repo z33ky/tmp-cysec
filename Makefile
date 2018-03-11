@@ -4,8 +4,8 @@ DESTDIR=/
 PY_SOURCES=dump.py module_name
 
 update-docs:
-	rm -f docs/source/schedsi.rst
-	sphinx-apidoc -o docs/source schedsi
+	rm -f docs/source/module_name.rst
+	sphinx-apidoc -o docs/source module_name
 
 html: .PHONY
 	$(MAKE) -C docs html
