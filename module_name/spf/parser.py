@@ -20,8 +20,16 @@ class Parser():
 
     # strictly speaking, version|term
     @staticmethod
-    def term_iter(string: str, terms: typing.List[Term]) \
+    def term_iter(string: str, terms: typing.MutableSequence[Term]) \
             -> typing.Generator[str, None, None]:
+        """Iterate over terms in `string`.
+
+        This yields each term as a `str`.
+
+        `string` is the string to parse.
+        `terms` is a list of :class:`Terms <.term.Term>` to which the
+        :class:`Spacings <.spacing.Spacing>` will be appended.
+        """
         match = Term.TERM_RE.match(string)
         view = ParsingString(string)
         while match:
@@ -34,6 +42,10 @@ class Parser():
 
     @classmethod
     def parse(cls, string: str) -> SPF:
+        """Parse `string` to :class:`SPF`.
+
+        `string` is the string to parse.
+        """
         terms: typing.List[Term] = []
 
         term_iter = cls.term_iter(string, terms)

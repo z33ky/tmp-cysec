@@ -35,6 +35,7 @@ class Term:
 
     @property
     def errors(self) -> typing.Iterable[ParsingError]:
+        """Errors that occurred while parsing this :class:`Term`."""
         return self._errors
 
 

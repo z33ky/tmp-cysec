@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Defines :class:`Version'."""
+"""Defines :class:`Version`."""
 
 
 import re
@@ -17,6 +17,10 @@ class Version(Term):
     SPF_VERSION_RE: typing.ClassVar[typing.Pattern] = re.compile(r"v=spf1")
 
     def __init__(self, term: str) -> None:
+        """Create a :class:`Version`.
+
+        `term` is the version string.
+        """
         super().__init__(term)
         match = self.SPF_VERSION_RE.fullmatch(term)
         if not match:
