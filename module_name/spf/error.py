@@ -7,6 +7,7 @@ if typing.TYPE_CHECKING:
     # mypy has no issues with cyclic imports
     # pylint: disable=cyclic-import,unused-import
     from .directive import Directive  # noqa: F401
+    from .macro_string import MacroString  # noqa: F401
     from .modifier import Modifier  # noqa: F401
     from .term import Term  # noqa: F401
     from .version import Version  # noqa: F401
@@ -45,3 +46,58 @@ class UnknownModifierError(UnknownTermError):
     """An unknown modifier was encountered."""
     def __init__(self, modifier: 'Modifier') -> None:
         super().__init__(modifier)
+
+
+class UnknownMacroLetterError(ParsingError):
+    def __init__(self, macro: 'MacroString', letter: str) -> None:
+        super().__init__()
+        self.macro = macro
+        self.letter = letter
+
+
+class UnknownMacroSpecialLetterError(ParsingError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__()
+        self.macro = macro
+
+
+class InvalidMacroLiteralError(ParsingError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__()
+        self.macro = macro
+
+
+class TrailingMacroExpandError(ParsingError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__()
+        self.macro = macro
+
+
+class EmptyMacroExpandError(ParsingError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__()
+        self.macro = macro
+
+
+class InvalidMacroExpandDelimiterError(ParsingError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__()
+        self.macro = macro
+
+
+class InvalidMacroTransformerError(ParsingError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__()
+        self.macro = macro
+
+
+class SwappedMacroTransformerError(InvalidMacroTransformerError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__(macro)
+        self.macro = macro
+
+
+class InvalidMacroTransformerCommandError(InvalidMacroTransformerError):
+    def __init__(self, macro: 'MacroString') -> None:
+        super().__init__(macro)
+        self.macro = macro

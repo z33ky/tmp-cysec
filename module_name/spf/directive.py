@@ -11,6 +11,7 @@ from .error import (
     TermError,
     UnknownDirectiveError,
 )
+from .macro_string import MacroString
 from .string import String
 from .term import Term
 from .cidr_length import (
@@ -21,10 +22,9 @@ from .cidr_length import (
 )
 
 
-def parse_domain_spec(_ctx: RequestContext, spec: str) -> MacroString:
+def parse_domain_spec(ctx: RequestContext, spec: str) -> MacroString:
     """Parse a domain-spec."""
-    # TODO
-    return String(spec)
+    return MacroString(ctx, spec)
 
 
 def parse_ip4_network(_ctx: RequestContext, address: str) -> String:
