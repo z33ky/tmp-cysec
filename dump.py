@@ -2,9 +2,15 @@
 """Dump."""
 
 import enum
+import ipaddress
 import sys
 import typing
 from module_name import spf
+from module_name.request_context import (
+    Domain,
+    RequestContext,
+    Sender,
+)
 from module_name.spf import cidr_length
 
 
@@ -63,7 +69,13 @@ def cidr_parse() -> None:
 
 
 def spf_parse() -> None:
-    policy = spf.Parser.parse(input("SPF string: "))
+    example_domain = Domain(ipaddress.IPv4Address("93.184.216.34"), ("example", "com"))
+    # example_domain = Domain(ipaddress.IPv6Address("2606:2800:220:1:248:1893:25c8:1946"),
+    #                         ("example", "com"))
+    ctx = RequestContext(Sender("nobody", example_domain),
+                         Domain(ipaddress.IPv4Address("127.0.0.1"), ("localhost",)))
+    ctx.requested.append(example_domain)
+    policy = spf.Parser.parse(ctx, input("SPF string: "))
     print()
     for e in policy.errors:
         if isinstance(e, spf.error.TermError):

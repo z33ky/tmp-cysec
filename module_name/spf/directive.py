@@ -5,6 +5,7 @@
 import itertools
 import re
 import typing
+from module_name.request_context import RequestContext
 from .error import (
     ParsingError,
     TermError,
@@ -13,26 +14,39 @@ from .error import (
 from .string import String
 from .term import Term
 from .cidr_length import (
+    CidrLengths,
     IP4CidrLengthParser,
     IP6CidrLengthParser,
     DualCidrLengthParser,
 )
 
 
-def parse_domain_spec(spec: str) -> String:
+def parse_domain_spec(_ctx: RequestContext, spec: str) -> MacroString:
     """Parse a domain-spec."""
     # TODO
     return String(spec)
 
 
-def parse_ip4_network(address: str) -> String:
+def parse_ip4_network(_ctx: RequestContext, address: str) -> String:
     """Parse an ip4-network."""
     return String(address)
 
 
-def parse_ip6_network(address: str) -> String:
+def parse_ip6_network(_ctx: RequestContext, address: str) -> String:
     """Parse an ip6-network."""
     return String(address)
+
+
+def parse_dual_cidr_length(_ctx: RequestContext, cidr: str) -> CidrLengths:
+    return DualCidrLengthParser.parse(cidr)
+
+
+def parse_ip4_cidr_length(_ctx: RequestContext, cidr: str) -> CidrLengths:
+    return IP4CidrLengthParser.parse(cidr)
+
+
+def parse_ip6_cidr_length(_ctx: RequestContext, cidr: str) -> CidrLengths:
+    return IP6CidrLengthParser.parse(cidr)
 
 
 class Argument(typing.NamedTuple):  # pylint: disable=too-few-public-methods
@@ -40,7 +54,7 @@ class Argument(typing.NamedTuple):  # pylint: disable=too-few-public-methods
 
     Defines how arguments are parsed.
     """
-    parse: typing.Callable[[str], Term]
+    parse: typing.Callable[[RequestContext, str], Term]
     mandatory: bool
 
 
@@ -69,17 +83,18 @@ class Directive(Term):
     ARGUMENTS: typing.Mapping[str, typing.Optional[Argument]] = {
         'all': None,
         'include': Argument(parse_domain_spec, True),
-        'a': Argument(DualCidrLengthParser.parse, False),
-        'mx': Argument(DualCidrLengthParser.parse, False),
+        'a': Argument(parse_dual_cidr_length, False),
+        'mx': Argument(parse_dual_cidr_length, False),
         'ptr': Argument(parse_domain_spec, False),
-        'ip4': Argument(IP4CidrLengthParser.parse, True),
-        'ip6': Argument(IP6CidrLengthParser.parse, True),
+        'ip4': Argument(parse_ip4_cidr_length, True),
+        'ip6': Argument(parse_ip6_cidr_length, True),
         'exist': Argument(parse_domain_spec, True),
     }
+    # TODO: domains with trailing dots SHOULD NOT be published (section 7.3)
 
     arg: typing.Optional[Term] = None
 
-    def __init__(self, match: typing.Match[str]) -> None:
+    def __init__(self, ctx: RequestContext, match: typing.Match[str]) -> None:
         """Create a :class:`Directive`.
 
         `match` is the match from :attr:`DIRECTIVE_RE`.
@@ -103,10 +118,10 @@ class Directive(Term):
                 self._errors.append(DirectiveArgumentError(self))
         else:
             # TODO: check arg_delim
-            self.arg = arg_type.parse(arg)
+            self.arg = arg_type.parse(ctx, arg)
 
     @classmethod
-    def parse(cls, term: str) -> typing.Optional['Directive']:
+    def parse(cls, ctx: RequestContext, term: str) -> typing.Optional['Directive']:
         """Try to parse a :class:`Directive` from `str`.
 
         `term` the string to parse.
@@ -114,7 +129,7 @@ class Directive(Term):
         Returns `None` if the term doesn't look like a :class:`Directive`.
         """
         match = cls.DIRECTIVE_RE.fullmatch(term)
-        return cls(match) if match else None
+        return cls(ctx, match) if match else None
 
     @property
     def errors(self) -> typing.Iterable[ParsingError]:

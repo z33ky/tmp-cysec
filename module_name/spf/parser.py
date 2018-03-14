@@ -3,6 +3,7 @@
 
 import typing
 from module_name.parsing_string import ParsingString
+from module_name.request_context import RequestContext
 from .directive import Directive
 from .modifier import Modifier
 from .spacing import Spacing
@@ -41,7 +42,7 @@ class Parser():
         # TODO: if view: error
 
     @classmethod
-    def parse(cls, string: str) -> SPF:
+    def parse(cls, ctx: RequestContext, string: str) -> SPF:
         """Parse `string` to :class:`SPF`.
 
         `string` is the string to parse.
@@ -61,7 +62,7 @@ class Parser():
             if directive:
                 terms.append(directive)
                 continue
-            modifier = Directive.parse(term)
+            modifier = Directive.parse(ctx, term)
             if modifier:
                 terms.append(modifier)
                 continue
