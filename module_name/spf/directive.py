@@ -22,31 +22,49 @@ from .cidr_length import (
 )
 
 
-def parse_domain_spec(ctx: RequestContext, spec: str) -> MacroString:
+def parse_domain_spec_and_cidr_length(ctx: RequestContext, spec: str) -> typing.Sequence[Term]:
+    """Parse a domain-spec and cidr-length.
+
+    Both are optionally present.
+    """
+    # FIXME: no "/" in domain-spec, yes?
+    spec, *cidr = spec.split("/", 1)
+    terms = []
+    if spec:
+        terms = terms.append(MacroString(ctx, spec))
+    if cidr:
+        assert len(cidr) == 1
+        terms.append(IP4CidrLengthParser.parse("/" + cidr[0]))
+    # FIXME: this will parse "a:" the same way as "a/", i.e. both as a domain-spec,
+    #        though the latter is a cidr-length
+    return terms or [MacroString(ctx, "")]
+
+
+def parse_domain_spec(ctx: RequestContext, spec: str) -> typing.Sequence[MacroString]:
     """Parse a domain-spec."""
-    return MacroString(ctx, spec)
+    return [MacroString(ctx, spec)]
 
 
-def parse_ip4_network(_ctx: RequestContext, address: str) -> String:
+def parse_ip4_network(_ctx: RequestContext, address: str) -> typing.Sequence[String]:
     """Parse an ip4-network."""
-    return String(address)
+    return [String(address)]
 
 
-def parse_ip6_network(_ctx: RequestContext, address: str) -> String:
+def parse_ip6_network(_ctx: RequestContext, address: str) -> typing.Sequence[String]:
     """Parse an ip6-network."""
-    return String(address)
+    return [String(address)]
 
 
-def parse_dual_cidr_length(_ctx: RequestContext, cidr: str) -> CidrLengths:
-    return DualCidrLengthParser.parse(cidr)
+def parse_dual_cidr_length(_ctx: RequestContext, cidr: str) -> typing.Sequence[CidrLengths]:
+    return [DualCidrLengthParser.parse(cidr)]
 
 
-def parse_ip4_cidr_length(_ctx: RequestContext, cidr: str) -> CidrLengths:
-    return IP4CidrLengthParser.parse(cidr)
+def parse_ip4_cidr_length(_ctx: RequestContext, cidr: str) -> typing.Sequence[CidrLengths]:
+    return [IP4CidrLengthParser.parse(cidr)]
 
 
-def parse_ip6_cidr_length(_ctx: RequestContext, cidr: str) -> CidrLengths:
-    return IP6CidrLengthParser.parse(cidr)
+def parse_ip6_cidr_length(_ctx: RequestContext, cidr: str) -> typing.Sequence[CidrLengths]:
+    return [IP6CidrLengthParser.parse(cidr)]
 
 
 class Argument(typing.NamedTuple):  # pylint: disable=too-few-public-methods
@@ -54,7 +72,7 @@ class Argument(typing.NamedTuple):  # pylint: disable=too-few-public-methods
 
     Defines how arguments are parsed.
     """
-    parse: typing.Callable[[RequestContext, str], Term]
+    parse: typing.Callable[[RequestContext, str], typing.Sequence[Term]]
     mandatory: bool
 
 
@@ -83,8 +101,8 @@ class Directive(Term):
     ARGUMENTS: typing.Mapping[str, typing.Optional[Argument]] = {
         'all': None,
         'include': Argument(parse_domain_spec, True),
-        'a': Argument(parse_dual_cidr_length, False),
-        'mx': Argument(parse_dual_cidr_length, False),
+        'a': Argument(parse_domain_spec_and_cidr_length, False),
+        'mx': Argument(parse_domain_spec_and_cidr_length, False),
         'ptr': Argument(parse_domain_spec, False),
         'ip4': Argument(parse_ip4_cidr_length, True),
         'ip6': Argument(parse_ip6_cidr_length, True),
@@ -92,7 +110,7 @@ class Directive(Term):
     }
     # TODO: domains with trailing dots SHOULD NOT be published (section 7.3)
 
-    arg: typing.Optional[Term] = None
+    arg: typing.Sequence[Term] = []
 
     def __init__(self, ctx: RequestContext, match: typing.Match[str]) -> None:
         """Create a :class:`Directive`.
@@ -134,11 +152,11 @@ class Directive(Term):
     @property
     def errors(self) -> typing.Iterable[ParsingError]:
         """Errors that occurred while parsing this :class:`Directive`."""
-        if self.arg is not None:
-            arg_errors = self.arg.errors
+        if self.arg:
+            arg_errors = (arg.errors for arg in self.arg)
         else:
-            arg_errors = iter(())
-        return itertools.chain(super().errors, arg_errors)
+            arg_errors = ()  # iter(())
+        return itertools.chain(super().errors, *arg_errors)
 
 
 if __debug__:

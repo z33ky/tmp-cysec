@@ -86,7 +86,7 @@ def spf_parse() -> None:
     print()
     for t in policy.terms:
         if isinstance(t, spf.Directive):
-            print(f"{t.name} ({t.arg and t.arg.string}) for \"{t.string}\"")
+            print(f"{t.name} {[arg.string for arg in t.arg]} for \"{t.string}\"")
         elif isinstance(t, spf.Modifier):
             print(f"{t.name} ({t.arg}) for \"{t.string}\"")
         else:
