@@ -2,11 +2,17 @@
 """SPF parsing errors."""
 
 
+import ipaddress
 import typing
 if typing.TYPE_CHECKING:
     # mypy has no issues with cyclic imports
     # pylint: disable=cyclic-import,unused-import
     from .directive import Directive  # noqa: F401
+    from .ipaddress import (  # noqa: F401
+        IPAddress,
+        IP4Address,
+        IP6Address,
+    )
     from .macro_string import MacroString  # noqa: F401
     from .modifier import Modifier  # noqa: F401
     from .term import Term  # noqa: F401
@@ -101,3 +107,21 @@ class InvalidMacroTransformerCommandError(InvalidMacroTransformerError):
     def __init__(self, macro: 'MacroString') -> None:
         super().__init__(macro)
         self.macro = macro
+
+class InvalidAddressError(ParsingError):
+    def __init__(self, address: 'IPAddress', error: ipaddress.AddressValueError) -> None:
+        super().__init__(address)
+        self.error = error
+
+
+class WrongAddressTypeError(ParsingError):
+    def __init__(self, address: 'IPAddress', expected: str) -> None:
+        super().__init__(address)
+        self.expected = expected
+
+    @property
+    def provided(self):
+        {
+            IP4Address: "IPv4",
+            IP6Address: "IPv6",
+        }[type(self.term)]  # TOO: vs __class__

@@ -11,6 +11,10 @@ from .error import (
     TermError,
     UnknownDirectiveError,
 )
+from .ipaddress import (
+        IP4Address,
+        IP6Address,
+)
 from .macro_string import MacroString
 from .string import String
 from .term import Term
@@ -45,26 +49,26 @@ def parse_domain_spec(ctx: RequestContext, spec: str) -> typing.Sequence[MacroSt
     return [MacroString(ctx, spec)]
 
 
-def parse_ip4_network(_ctx: RequestContext, address: str) -> typing.Sequence[String]:
-    """Parse an ip4-network."""
-    return [String(address)]
+def parse_dual_cidr_length(_ctx: RequestContext, cidr: str) -> CidrLengths:
+    return DualCidrLengthParser.parse(cidr)
 
 
-def parse_ip6_network(_ctx: RequestContext, address: str) -> typing.Sequence[String]:
-    """Parse an ip6-network."""
-    return [String(address)]
+def parse_ip4_network(_ctx: RequestContext, address: str) -> typing.Sequence[Term]:
+    address, *cidr = address.split("/", 1)
+    terms = [IP4Address(address)]
+    if cidr:
+        assert len(cidr) == 1
+        terms.append(IP4CidrLengthParser.parse("/" + cidr[0]))
+    return terms
 
 
-def parse_dual_cidr_length(_ctx: RequestContext, cidr: str) -> typing.Sequence[CidrLengths]:
-    return [DualCidrLengthParser.parse(cidr)]
-
-
-def parse_ip4_cidr_length(_ctx: RequestContext, cidr: str) -> typing.Sequence[CidrLengths]:
-    return [IP4CidrLengthParser.parse(cidr)]
-
-
-def parse_ip6_cidr_length(_ctx: RequestContext, cidr: str) -> typing.Sequence[CidrLengths]:
-    return [IP6CidrLengthParser.parse(cidr)]
+def parse_ip6_network(_ctx: RequestContext, address: str) -> typing.Sequence[Term]:
+    address, *cidr = address.split("/", 1)
+    terms = [IP6Address(address)]
+    if cidr:
+        assert len(cidr) == 1
+        terms.append(IP6CidrLengthParser.parse("/" + cidr[0]))
+    return terms
 
 
 class Argument(typing.NamedTuple):  # pylint: disable=too-few-public-methods
@@ -104,8 +108,8 @@ class Directive(Term):
         'a': Argument(parse_domain_spec_and_cidr_length, False),
         'mx': Argument(parse_domain_spec_and_cidr_length, False),
         'ptr': Argument(parse_domain_spec, False),
-        'ip4': Argument(parse_ip4_cidr_length, True),
-        'ip6': Argument(parse_ip6_cidr_length, True),
+        'ip4': Argument(parse_ip4_network, True),
+        'ip6': Argument(parse_ip6_network, True),
         'exist': Argument(parse_domain_spec, True),
     }
     # TODO: domains with trailing dots SHOULD NOT be published (section 7.3)
