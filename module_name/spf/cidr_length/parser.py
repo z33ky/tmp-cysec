@@ -104,14 +104,15 @@ class Parser():
         if start != 0:
             if start < 0:
                 # if we didn't find a separator, look for a number
-                start = next((i for i, c in enumerate(view) if c.isdigit()), len(view))
+                start = next((i for i, c in enumerate(view) if c.isdigit()), len(view)) + 1
             elif view[0].isdigit():
                 # do not skip anything then
                 start = 0
             # we need at least 1 invalid character...
             errors.append(InvalidStartError(view, parsing_kind, start or 1))
-            start -= 1
-        view.advance(start + 1)
+        else:
+            start += 1
+        view.advance(start)
         if not view:
             errors.append(EmptyError(view, parsing_kind))
             return view, None
@@ -119,8 +120,7 @@ class Parser():
         sep = str(view).find("/")
         # an empty string is allowed when when the caller looks for different kinds,
         # i.e. parsing_kind is "dual" and specific_kind is "ip4"
-        if sep == 0 and parsing_kind == specific_kind:
-            view.advance(1)
+        if sep == 0 and parsing_kind != specific_kind:
             return view, None
 
         # find the first digit-character
@@ -135,7 +135,7 @@ class Parser():
                 errors.append(InvalidCharactersError(view, parsing_kind, advance))
                 view.advance(advance)
                 return view, None
-            errors.append(InvalidCharactersError(view, parsing_kind, first_digit_idx - 1))
+            errors.append(InvalidCharactersError(view, parsing_kind, first_digit_idx))
             view.advance(first_digit_idx)
 
         assert view[0].isdigit()
