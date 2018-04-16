@@ -35,7 +35,7 @@ def parse_domain_spec_and_cidr_length(ctx: RequestContext, spec: str) -> typing.
     spec, *cidr = spec.split("/", 1)
     terms = []
     if spec:
-        terms = terms.append(MacroString(ctx, spec))
+        terms.append(MacroString(ctx, spec))
     if cidr:
         assert len(cidr) == 1
         terms.append(IP4CidrLengthParser.parse("/" + cidr[0]))

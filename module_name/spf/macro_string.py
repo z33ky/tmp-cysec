@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Defines the :class:'MacroString'."""
 
 
 import datetime
@@ -21,7 +22,10 @@ from .term import Term
 
 
 class MacroString(Term):
+    """A macro-string.
 
+    The string is expanded on initialization.
+    """
     # chr(0x25) == ';'
     ALLOWED_MACRO_LITERALS: typing.Sequence[str] = (*(chr(num) for num in range(0x21, 0x7e)
                                                       if num != 0x25),)
@@ -50,6 +54,11 @@ class MacroString(Term):
     error_is_fatal = False
 
     def __init__(self, ctx: RequestContext, spec: str) -> None:
+        """Create a :class:`MacroString`.
+
+        `ctx` is the :class:`RequestContext` which will be used to expand the macro-string.
+        `spec` is the macro-string.
+        """
         super().__init__(spec)
         view = ParsingString(spec)
         self.expanded = ""
@@ -69,8 +78,6 @@ class MacroString(Term):
                 self._errors.append(InvalidMacroLiteralError(self))
             self.expanded += literals
             view = self._expand(ctx, view)
-
-        print(f"{spec} -> {self.expanded} ({len(self._errors)})")
 
     def _expand(self, ctx: RequestContext, view: ParsingString) -> ParsingString:
         if not view:
@@ -149,6 +156,9 @@ class MacroString(Term):
         return view, True
 
     def _prepare_transform(self, transformer: str) -> typing.Tuple[typing.Optional[int], str]:
+        if not transformer:
+            return None, transformer
+
         split = re.split(r"(\d+)", transformer)
 
         if split[0]:
